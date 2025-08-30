@@ -5,6 +5,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   
   return {
+    base: './',  
     plugins: [react()],
     server: {
       port: 3000,
@@ -13,28 +14,28 @@ export default defineConfig(({ mode }) => {
         '/api': {
           target: env.VITE_API_URL || 'http://localhost:5000',
           changeOrigin: true,
-          secure: true,  // Enable for HTTPS in production
+          secure: true,
           rewrite: (path) => path.replace(/^\/api/, '')
         }
       }
     },
     build: {
       outDir: 'dist',
-      sourcemap: false,  // Disable sourcemaps in production
-      minify: 'terser',  // Better minification
-      chunkSizeWarningLimit: 1000, // Increase chunk size warning limit
+      assetsDir: 'assets',
+      sourcemap: true,
       rollupOptions: {
+        input: {
+          main: './index.html'  
+        },
         output: {
-          manualChunks: {
-            react: ['react', 'react-dom', 'react-router-dom'],
-            vendor: ['axios', 'date-fns']
-          }
+          entryFileNames: 'assets/[name]-[hash].js',
+          chunkFileNames: 'assets/[name]-[hash].js',
+          assetFileNames: 'assets/[name]-[hash][extname]'
         }
       }
     },
-    preview: {
-      port: 3000,
-      strictPort: true
+    define: {
+      'process.env': {}
     }
   };
 });
