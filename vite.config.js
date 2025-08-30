@@ -1,11 +1,11 @@
-import { defineConfig, loadEnv } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig, loadEnv } from 'vite'
+import react from '@vitejs/plugin-react'
 
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
-  
+  const env = loadEnv(mode, process.cwd(), '')
+
   return {
-    base: './',  
+    base: './',
     plugins: [react()],
     server: {
       port: 3000,
@@ -24,9 +24,7 @@ export default defineConfig(({ mode }) => {
       assetsDir: 'assets',
       sourcemap: true,
       rollupOptions: {
-        input: {
-          main: './index.html'  
-        },
+        input: 'index.html', // 👈 FIXED
         output: {
           entryFileNames: 'assets/[name]-[hash].js',
           chunkFileNames: 'assets/[name]-[hash].js',
@@ -37,5 +35,5 @@ export default defineConfig(({ mode }) => {
     define: {
       'process.env': {}
     }
-  };
-});
+  }
+})
