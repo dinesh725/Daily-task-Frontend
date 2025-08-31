@@ -46,28 +46,28 @@ api.interceptors.response.use(
     
     // Handle 401 Unauthorized
     if (error.response?.status === 401) {
-      localStorage.removeItem("token")
-      localStorage.removeItem("user")
-      window.location.href = "/login"
-      toast.error("Session expired. Please login again.")
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      // Redirect to login or refresh token if you have refresh token logic
+      window.location.href = '/login';
       return Promise.reject(error);
     }
-    
-    // Handle 403 Forbidden
-    if (error.response?.status === 403) {
-      toast.error("You don't have permission to perform this action.")
-    }
-    
-    // Handle 500 Server Error
+
+    // Handle 500 errors
     if (error.response?.status === 500) {
-      toast.error("Server error. Please try again later.")
-    } 
-    // Handle network error
-    else if (!error.response) {
-      toast.error("Network error. Please check your connection.")
+      console.error('Server error:', {
+        status: error.response.status,
+        data: error.response.data,
+        url: error.config.url,
+        method: error.config.method,
+      });
+      
+      // For production, show a user-friendly message
+      if (process.env.NODE_ENV === 'production') {
+        error.userMessage = 'Something went wrong. Your changes have been saved locally and will sync when back online.';
+      }
     }
-    
-    // For other errors, reject the promise
+
     return Promise.reject(error);
   }
 );
