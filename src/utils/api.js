@@ -4,12 +4,11 @@ import { getLocalTasks, saveLocalTasks } from './storage';
 
 // Create axios instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || "https://daily-task-backend-eight.vercel.app/api",
+  baseURL: (import.meta.env.VITE_API_URL || "http://localhost:5000")+"/api",
   withCredentials: true,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
-    'Accept': 'application/json',
   }
 })
 
@@ -22,17 +21,13 @@ api.interceptors.request.use(
     }
     return config
   },
-  (error) => {
-    console.error('Request error:', error);
-    return Promise.reject(error);
-  },
+  (error) => Promise.reject(error),
 )
 
 // Response interceptor for error handling
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
-    console.error('API Error:', error.response?.data || error.message);
     const originalRequest = error.config;
     
     // If the error is due to being offline, try to get from localStorage if it's a GET request
@@ -42,8 +37,7 @@ api.interceptors.response.use(
       const date = pathParts[pathParts.length - 1];
       
       if (date) {
-        const userId = JSON.parse(localStorage.getItem("user"))?.id;
-        const localData = getLocalTasks(date, userId);
+        const localData = getLocalTasks(date);
         if (localData) {
           return { data: { tasks: localData } };
         }
@@ -54,23 +48,42 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
+      // Redirect to login or refresh token if you have refresh token logic
       window.location.href = '/login';
+      return Promise.reject(error);
     }
-    
+
+    // Handle 500 errors
+    if (error.response?.status === 500) {
+      console.error('Server error:', {
+        status: error.response.status,
+        data: error.response.data,
+        url: error.config.url,
+        method: error.config.method,
+      });
+      
+      // For production, show a user-friendly message
+      if (process.env.NODE_ENV === 'production') {
+        error.userMessage = 'Something went wrong. Your changes have been saved locally and will sync when back online.';
+      }
+    }
+
     return Promise.reject(error);
   }
 );
 
-// Queue for failed requests when offline
-const requestQueue = [];
+// Queue for failed requests to retry when back online
+let requestQueue = [];
 
-// Process queued requests when back online
-const processQueue = () => {
+const processQueue = async () => {
   while (requestQueue.length > 0) {
     const { config, resolve, reject } = requestQueue.shift();
-    api(config)
-      .then(response => resolve(response))
-      .catch(error => reject(error));
+    try {
+      const response = await api(config);
+      resolve(response);
+    } catch (error) {
+      reject(error);
+    }
   }
 };
 
@@ -79,4 +92,4 @@ window.addEventListener('online', () => {
   processQueue();
 });
 
-export default api;
+export default api

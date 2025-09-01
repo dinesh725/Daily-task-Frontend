@@ -31,7 +31,6 @@ const Dashboard = () => {
   const [saving, setSaving] = useState(false)
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [error, setError] = useState(null)
-  const [lastSynced, setLastSynced] = useState(null)
 
   // Check online status
   useEffect(() => {
@@ -105,11 +104,12 @@ const Dashboard = () => {
     setError(null);
     
     try {
-      // Try to load from server first if online
+      // First try to load from server
       if (isOnline) {
         try {
           console.log('Loading tasks from server for date:', date);
           const response = await api.get(`/tasks/${date}`);
+          
           if (response.data?.tasks) {
             const tasksWithIds = response.data.tasks.map(task => ({
               ...task,
@@ -119,16 +119,23 @@ const Dashboard = () => {
             setTasks(tasksWithIds);
             // Save to localStorage as backup
             saveLocalTasks(date, tasksWithIds, user?.id);
-            setLastSynced(new Date());
             return;
           }
         } catch (error) {
-          console.error('Error fetching tasks from server:', error);
-          // Continue to load from local storage if server fetch fails
+          console.error('Error loading from server:', {
+            message: error.message,
+            status: error.response?.status,
+            data: error.response?.data
+          });
+          
+          // If it's a 404, it's okay - just means no tasks saved for this date yet
+          if (error.response?.status !== 404) {
+            toast.error("Failed to load tasks from server. Using local version.");
+          }
         }
       }
       
-      // Fall back to local storage if offline or server fetch fails
+      // If we get here, either we're offline or server load failed - try localStorage
       const localTasks = getLocalTasks(date, user?.id);
       if (localTasks) {
         console.log('Loaded tasks from localStorage:', localTasks.length);
@@ -147,60 +154,6 @@ const Dashboard = () => {
       toast.error("Failed to load tasks. Using local version if available.");
     } finally {
       setLoading(false);
-    }
-  };
-
-  // Function to sync tasks with backend
-  const syncTasksWithBackend = async (tasksToSync, date) => {
-    if (!navigator.onLine) {
-      console.log('Device is offline. Tasks will be synced when back online.');
-      return { success: false, error: 'Device is offline' };
-    }
-
-    try {
-      console.log('Syncing tasks with backend:', { date, taskCount: tasksToSync.length });
-      
-      // Calculate summary
-      const summary = calculateSummary(tasksToSync);
-      
-      // Prepare tasks with required fields
-      const tasks = tasksToSync.map(task => ({
-        id: task.id,
-        startTime: task.startTime,
-        endTime: task.endTime,
-        planTask: task.planTask || '',
-        actualTask: task.actualTask || '',
-        category: task.category || 'Uncategorized',
-        duration: task.duration || 0
-      }));
-
-      const response = await api.post(`/tasks/${date}`, { tasks, summary });
-      
-      if (response.data) {
-        console.log('Tasks synced successfully:', response.data);
-        // Update local storage with the synced tasks
-        saveLocalTasks(date, tasksToSync);
-        setLastSynced(new Date());
-        return { success: true };
-      }
-      
-      return { success: false, error: 'Failed to sync tasks' };
-    } catch (error) {
-      console.error('Error syncing tasks:', error);
-      
-      // If offline, save tasks locally
-      if (!navigator.onLine) {
-        saveLocalTasks(date, tasksToSync);
-        return { 
-          success: false, 
-          error: 'Device is offline. Changes saved locally and will sync when back online.' 
-        };
-      }
-      
-      return { 
-        success: false, 
-        error: error.response?.data?.error || 'Failed to sync tasks. Changes saved locally.' 
-      };
     }
   };
 
@@ -283,12 +236,34 @@ const Dashboard = () => {
       const syncTasks = async () => {
         const localTasks = getLocalTasks(selectedDate, user?.id);
         if (localTasks) {
-          await syncTasksWithBackend(localTasks, selectedDate);
+          await syncTasksWithBackend(localTasks);
         }
       };
       syncTasks();
     }
   }, [isOnline, selectedDate, user?.id]);
+
+  // Helper function to sync tasks with backend
+  const syncTasksWithBackend = async (tasksToSync) => {
+    if (!isOnline) return false;
+    
+    try {
+      const summary = calculateSummary(tasksToSync);
+      const response = await api.post(`/tasks/${selectedDate}`, { 
+        tasks: tasksToSync, 
+        summary 
+      });
+      
+      if (response.status === 200 || response.status === 201) {
+        console.log('Successfully synced tasks with backend');
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error syncing tasks with backend:', error);
+      return false;
+    }
+  };
 
   // Calculate summary data
   const calculateSummary = (taskList) => {
