@@ -30,6 +30,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const [error, setError] = useState(null)
 
   // Check online status
   useEffect(() => {
@@ -97,56 +98,60 @@ const Dashboard = () => {
     }))
   }
 
-  // Load tasks with offline support
-  const loadTasks = async () => {
+  // Load tasks from server or localStorage
+  const loadTasks = async (date = selectedDate) => {
     setLoading(true);
+    setError(null);
     
     try {
-      // Try to load from backend first if online
-      let tasks = [];
-      
+      // First try to load from server
       if (isOnline) {
         try {
-          const response = await api.get(`/tasks/${selectedDate}`);
-          if (response.data.tasks) {
-            tasks = response.data.tasks;
+          console.log('Loading tasks from server for date:', date);
+          const response = await api.get(`/tasks/${date}`);
+          
+          if (response.data?.tasks) {
+            const tasksWithIds = response.data.tasks.map(task => ({
+              ...task,
+              id: task.id || `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+            }));
+            
+            setTasks(tasksWithIds);
             // Save to localStorage as backup
-            saveLocalTasks(selectedDate, tasks, user?.id);
+            saveLocalTasks(date, tasksWithIds, user?.id);
+            return;
           }
         } catch (error) {
-          console.error('Error loading from server, falling back to localStorage', error);
+          console.error('Error loading from server:', {
+            message: error.message,
+            status: error.response?.status,
+            data: error.response?.data
+          });
+          
+          // If it's a 404, it's okay - just means no tasks saved for this date yet
+          if (error.response?.status !== 404) {
+            toast.error("Failed to load tasks from server. Using local version.");
+          }
         }
       }
       
-      // If no tasks from backend or offline, try localStorage
-      if (tasks.length === 0) {
-        const localTasks = getLocalTasks(selectedDate, user?.id);
-        if (localTasks) {
-          tasks = localTasks;
-          // If we're online but got data from localStorage, try to sync with backend
-          if (isOnline) {
-            syncTasksWithBackend(tasks);
-          }
-        }
+      // If we get here, either we're offline or server load failed - try localStorage
+      const localTasks = getLocalTasks(date, user?.id);
+      if (localTasks) {
+        console.log('Loaded tasks from localStorage:', localTasks.length);
+        const tasksWithIds = localTasks.map(task => ({
+          ...task,
+          id: task.id || `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        }));
+        setTasks(tasksWithIds);
+      } else {
+        console.log('No tasks found in localStorage, using default tasks');
+        setTasks(createDefaultTasks());
       }
-
-      // If still no tasks, use default
-      if (tasks.length === 0) {
-        tasks = createDefaultTasks();
-      }
-
-      // Ensure all tasks have IDs
-      const tasksWithIds = tasks.map(task => ({
-        ...task,
-        id: task.id || `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-      }));
-
-      setTasks(tasksWithIds);
     } catch (error) {
-      console.error('Error loading tasks:', error);
-      // Try to load from localStorage as last resort
-      const localTasks = getLocalTasks(selectedDate, user?.id) || createDefaultTasks();
-      setTasks(localTasks);
+      console.error('Unexpected error in loadTasks:', error);
+      setError("Failed to load tasks. Please try refreshing the page.");
+      toast.error("Failed to load tasks. Using local version if available.");
     } finally {
       setLoading(false);
     }
@@ -157,6 +162,20 @@ const Dashboard = () => {
     setSaving(true);
     const summary = calculateSummary(tasks);
     
+    // Prepare the data to be saved
+    const taskData = {
+      tasks: tasks.map(task => ({
+        id: task.id,
+        startTime: task.startTime,
+        endTime: task.endTime,
+        planTask: task.planTask,
+        actualTask: task.actualTask,
+        category: task.category,
+        duration: task.duration
+      })),
+      summary
+    };
+
     try {
       // Always save to localStorage first for immediate feedback
       saveLocalTasks(selectedDate, tasks, user?.id);
@@ -164,18 +183,37 @@ const Dashboard = () => {
       // Try to save to backend if online
       if (isOnline) {
         try {
-          const response = await api.post(`/tasks/${selectedDate}`, { tasks, summary });
+          console.log('Saving tasks to server:', {
+            date: selectedDate,
+            taskCount: taskData.tasks.length,
+            hasSummary: !!summary
+          });
+          
+          const response = await api.post(`/tasks/${selectedDate}`, taskData);
+          
           if (response.status === 200 || response.status === 201) {
             toast.success("Tasks saved successfully!");
             return true;
           }
         } catch (error) {
-          if (error.response?.status === 403) {
-            console.error('Permission denied:', error);
-            toast.success("Tasks saved locally. Sign in to sync across devices.");
+          console.error('Error saving to server:', {
+            message: error.message,
+            status: error.response?.status,
+            data: error.response?.data,
+            config: {
+              url: error.config?.url,
+              method: error.config?.method,
+              data: error.config?.data
+            }
+          });
+          
+          // If we get a 400, it's likely a data validation error
+          if (error.response?.status === 400) {
+            toast.error("Couldn't save to server: Invalid data. Please check your tasks and try again.");
             return false;
           }
-          console.error('Error saving to server:', error);
+          
+          // For other errors, fall back to local storage
           toast.success("Tasks saved locally. Will sync when back online.");
           return false;
         }
@@ -184,8 +222,8 @@ const Dashboard = () => {
         return true;
       }
     } catch (error) {
-      console.error('Error saving tasks:', error);
-      toast.error("Failed to save tasks");
+      console.error('Unexpected error in saveTasks:', error);
+      toast.error("Failed to save tasks. Please try again.");
       return false;
     } finally {
       setSaving(false);
