@@ -23,6 +23,8 @@ const CATEGORIES = {
   Default: "#4b5563",
 }
 
+const isDev = import.meta.env?.DEV === true;
+
 const Dashboard = () => {
   const { user, logout } = useAuth()
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"))
@@ -107,7 +109,7 @@ const Dashboard = () => {
       // First try to load from server
       if (isOnline) {
         try {
-          console.log('Loading tasks from server for date:', date);
+          if (isDev) console.log('Loading tasks from server for date:', date);
           const response = await api.get(`/tasks/${date}`);
           
           if (Array.isArray(response.data?.tasks)) {
@@ -148,14 +150,14 @@ const Dashboard = () => {
       // If we get here, either we're offline or server load failed - try localStorage
       const localTasks = getLocalTasks(date, user?.id);
       if (Array.isArray(localTasks) && localTasks.length > 0) {
-        console.log('Loaded tasks from localStorage:', localTasks.length);
+        if (isDev) console.log('Loaded tasks from localStorage:', localTasks.length);
         const tasksWithIds = localTasks.map(task => ({
           ...task,
           id: task.id || `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
         }));
         setTasks(tasksWithIds);
       } else {
-        console.log('No tasks found in localStorage, using default tasks');
+        if (isDev) console.log('No tasks found in localStorage, using default tasks');
         const defaults = createDefaultTasks();
         setTasks(defaults);
         saveLocalTasks(date, defaults, user?.id);
@@ -195,7 +197,7 @@ const Dashboard = () => {
       // Try to save to backend if online
       if (isOnline) {
         try {
-          console.log('Saving tasks to server:', {
+          if (isDev) console.log('Saving tasks to server:', {
             date: selectedDate,
             taskCount: taskData.tasks.length,
             hasSummary: !!summary
@@ -259,7 +261,7 @@ const Dashboard = () => {
       });
       
       if (response.status === 200 || response.status === 201) {
-        console.log('Successfully synced tasks with backend');
+        if (isDev) console.log('Successfully synced tasks with backend');
         return true;
       }
       return false;
@@ -454,13 +456,13 @@ const Dashboard = () => {
     const storageKey = `daily_tasks_${user?.id || 'anonymous'}`;
     const data = localStorage.getItem(storageKey);
     
-    console.log('=== DEBUG LOCALSTORAGE ===');
-    console.log('Storage Key:', storageKey);
-    console.log('Current Date:', selectedDate);
-    console.log('User ID:', user?.id || 'anonymous');
-    console.log('All Data:', data ? JSON.parse(data) : 'No data');
-    console.log('Current Date Data:', getLocalTasks(selectedDate, user?.id));
-    console.log('==========================');
+    if (isDev) console.log('=== DEBUG LOCALSTORAGE ===');
+    if (isDev) console.log('Storage Key:', storageKey);
+    if (isDev) console.log('Current Date:', selectedDate);
+    if (isDev) console.log('User ID:', user?.id || 'anonymous');
+    if (isDev) console.log('All Data:', data ? JSON.parse(data) : 'No data');
+    if (isDev) console.log('Current Date Data:', getLocalTasks(selectedDate, user?.id));
+    if (isDev) console.log('==========================');
     
     toast.success('Check console for localStorage debug info');
   };
@@ -504,13 +506,15 @@ const Dashboard = () => {
                 <LogOut className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Logout</span>
               </Button>
-              <button 
-                onClick={debugLocalStorage}
-                className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"
-                title="Debug localStorage"
-              >
-                🐞 Debug
-              </button>
+              {isDev && (
+                <button 
+                  onClick={debugLocalStorage}
+                  className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"
+                  title="Debug localStorage"
+                >
+                  🐞 Debug
+                </button>
+              )}
             </div>
           </div>
         </div>

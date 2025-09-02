@@ -1,5 +1,6 @@
 // Get the storage key scoped by user ID
 const getStorageKey = (userId) => `daily_tasks_${userId || 'anonymous'}`;
+const isDev = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV === true;
 
 // Get tasks from localStorage
 export const getLocalTasks = (date, userId) => {
@@ -40,7 +41,7 @@ export const saveLocalTasks = (date, tasks, userId) => {
     if (tasks.length > 0) {
       existingData[date] = tasks;
       localStorage.setItem(storageKey, JSON.stringify(existingData));
-      console.log('Saved tasks to localStorage:', { date, userId, storageKey });
+      if (isDev) console.log('Saved tasks to localStorage:', { date, userId, storageKey });
     }
   } catch (error) {
     console.error('Error saving to localStorage:', error);

@@ -12,6 +12,8 @@ const api = axios.create({
   }
 })
 
+const isDev = typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.DEV === true;
+
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
@@ -55,15 +57,17 @@ api.interceptors.response.use(
 
     // Handle 500 errors
     if (error.response?.status === 500) {
-      console.error('Server error:', {
-        status: error.response.status,
-        data: error.response.data,
-        url: error.config.url,
-        method: error.config.method,
-      });
+      if (isDev) {
+        console.error('Server error:', {
+          status: error.response.status,
+          data: error.response.data,
+          url: error.config.url,
+          method: error.config.method,
+        });
+      }
       
       // For production, show a user-friendly message
-      if (process.env.NODE_ENV === 'production') {
+      if (!isDev) {
         error.userMessage = 'Something went wrong. Your changes have been saved locally and will sync when back online.';
       }
     }

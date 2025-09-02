@@ -161,11 +161,11 @@ const Register = () => {
               />
               <label htmlFor="terms" className="text-sm text-gray-900">
                 By signing in,you agree to our{" "}
-                <button type="button" onClick={() => setShowTerms(true)} className="text-primary-600 hover:text-primary-500 underline">
+                <button type="button" onClick={() => setShowTerms(true)} className="text-primary-600 hover:text-primary-500 ">
                   Terms of Service
                 </button>{" "}
                 and{" "}
-                <button type="button" onClick={() => setShowPrivacy(true)} className="text-primary-600 hover:text-primary-500 underline">
+                <button type="button" onClick={() => setShowPrivacy(true)} className="text-primary-600 hover:text-primary-500 ">
                   Privacy Policy
                 </button>
               </label>
