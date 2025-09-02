@@ -160,7 +160,7 @@ const Register = () => {
                 className="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
               />
               <label htmlFor="terms" className="text-sm text-gray-900">
-                I agree to the{" "}
+                By signing in,you agree to our{" "}
                 <button type="button" onClick={() => setShowTerms(true)} className="text-primary-600 hover:text-primary-500 underline">
                   Terms of Service
                 </button>{" "}

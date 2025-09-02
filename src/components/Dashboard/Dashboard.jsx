@@ -110,15 +110,21 @@ const Dashboard = () => {
           console.log('Loading tasks from server for date:', date);
           const response = await api.get(`/tasks/${date}`);
           
-          if (response.data?.tasks) {
-            const tasksWithIds = response.data.tasks.map(task => ({
-              ...task,
-              id: task.id || `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-            }));
-            
-            setTasks(tasksWithIds);
-            // Save to localStorage as backup
-            saveLocalTasks(date, tasksWithIds, user?.id);
+          if (Array.isArray(response.data?.tasks)) {
+            if (response.data.tasks.length > 0) {
+              const tasksWithIds = response.data.tasks.map(task => ({
+                ...task,
+                id: task.id || `task-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+              }));
+              setTasks(tasksWithIds);
+              // Save to localStorage as backup
+              saveLocalTasks(date, tasksWithIds, user?.id);
+            } else {
+              // Empty tasks from server -> initialize defaults
+              const defaults = createDefaultTasks();
+              setTasks(defaults);
+              saveLocalTasks(date, defaults, user?.id);
+            }
             return;
           }
         } catch (error) {
@@ -141,7 +147,7 @@ const Dashboard = () => {
       
       // If we get here, either we're offline or server load failed - try localStorage
       const localTasks = getLocalTasks(date, user?.id);
-      if (localTasks) {
+      if (Array.isArray(localTasks) && localTasks.length > 0) {
         console.log('Loaded tasks from localStorage:', localTasks.length);
         const tasksWithIds = localTasks.map(task => ({
           ...task,
@@ -150,7 +156,9 @@ const Dashboard = () => {
         setTasks(tasksWithIds);
       } else {
         console.log('No tasks found in localStorage, using default tasks');
-        setTasks(createDefaultTasks());
+        const defaults = createDefaultTasks();
+        setTasks(defaults);
+        saveLocalTasks(date, defaults, user?.id);
       }
     } catch (error) {
       console.error('Unexpected error in loadTasks:', error);
