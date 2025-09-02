@@ -129,8 +129,12 @@ const Dashboard = () => {
           });
           
           // If it's a 404, it's okay - just means no tasks saved for this date yet
-          if (error.response?.status !== 404) {
-            toast.error("Failed to load tasks from server. Using local version.");
+          if (error.response?.status === 404) {
+            toast.info("No tasks found on server for this date. Using local version if available.");
+          } else if (error.response?.status === 500) {
+            toast.error("Server error. Using local version if available.");
+          } else {
+            toast.error("Failed to load tasks from server. Using local version if available.");
           }
         }
       }
@@ -206,24 +210,16 @@ const Dashboard = () => {
               data: error.config?.data
             }
           });
-          
-          // If we get a 400, it's likely a data validation error
-          if (error.response?.status === 400) {
-            toast.error("Couldn't save to server: Invalid data. Please check your tasks and try again.");
-            return false;
-          }
-          
-          // For other errors, fall back to local storage
-          toast.success("Tasks saved locally. Will sync when back online.");
+          toast.error("Failed to save to server. Saved locally.");
           return false;
         }
       } else {
-        toast.success("Tasks saved locally. Will sync when back online.");
-        return true;
+        toast.success("Saved locally. Will sync with server when online.");
+        return true; // Consider local save a success
       }
     } catch (error) {
       console.error('Unexpected error in saveTasks:', error);
-      toast.error("Failed to save tasks. Please try again.");
+      toast.error("An unexpected error occurred while saving.");
       return false;
     } finally {
       setSaving(false);
@@ -419,21 +415,26 @@ const Dashboard = () => {
     })
   }
 
-  // Load tasks when date changes
+  // Load tasks when component mounts or date changes
   useEffect(() => {
-    loadTasks()
-  }, [selectedDate])
+    if (user) { // Only load tasks if user is authenticated
+      loadTasks(selectedDate)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, user]) // Add user to dependency array
 
-  // Auto-save every 30 seconds
+  // When going online, try to sync local data
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (tasks.length > 0) {
-        saveTasks()
-      }
-    }, 30000)
-
-    return () => clearInterval(interval)
-  }, [tasks, selectedDate])
+    if (isOnline) {
+      const syncTasks = async () => {
+        const localTasks = getLocalTasks(selectedDate, user?.id);
+        if (localTasks) {
+          await syncTasksWithBackend(localTasks);
+        }
+      };
+      syncTasks();
+    }
+  }, [isOnline, selectedDate, user?.id]);
 
   // Add this new function
   const debugLocalStorage = () => {
