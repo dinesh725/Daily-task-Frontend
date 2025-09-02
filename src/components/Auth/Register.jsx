@@ -15,6 +15,9 @@ const Register = () => {
   })
   const [errors, setErrors] = useState({})
   const [loading, setLoading] = useState(false)
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
+  const [showTerms, setShowTerms] = useState(false)
+  const [showPrivacy, setShowPrivacy] = useState(false)
 
   const { register } = useAuth()
   const navigate = useNavigate()
@@ -69,6 +72,10 @@ const Register = () => {
     e.preventDefault()
 
     if (!validateForm()) return
+    if (!acceptedTerms) {
+      setErrors((prev) => ({ ...prev, terms: "You must accept the Terms and Privacy Policy" }))
+      return
+    }
 
     setLoading(true)
     const result = await register(formData.name, formData.email, formData.password)
@@ -137,25 +144,33 @@ const Register = () => {
               />
             </div>
 
-            <div className="flex items-center">
+            <div className="flex items-start gap-2">
               <input
                 id="terms"
                 name="terms"
                 type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => {
+                  setAcceptedTerms(e.target.checked)
+                  if (e.target.checked && errors.terms) {
+                    setErrors((prev) => ({ ...prev, terms: "" }))
+                  }
+                }}
                 required
-                className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                className="mt-1 h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
               />
-              <label htmlFor="terms" className="ml-2 block text-sm text-gray-900">
+              <label htmlFor="terms" className="text-sm text-gray-900">
                 I agree to the{" "}
-                <a href="#" className="text-primary-600 hover:text-primary-500">
+                <button type="button" onClick={() => setShowTerms(true)} className="text-primary-600 hover:text-primary-500 underline">
                   Terms of Service
-                </a>{" "}
+                </button>{" "}
                 and{" "}
-                <a href="#" className="text-primary-600 hover:text-primary-500">
+                <button type="button" onClick={() => setShowPrivacy(true)} className="text-primary-600 hover:text-primary-500 underline">
                   Privacy Policy
-                </a>
+                </button>
               </label>
             </div>
+            {errors.terms && (<p className="text-sm text-red-600">{errors.terms}</p>)}
 
             <Button type="submit" className="w-full" loading={loading} disabled={loading}>
               Create Account
@@ -170,6 +185,58 @@ const Register = () => {
               </p>
             </div>
           </form>
+
+          {/* Terms of Service Modal */}
+          {showTerms && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <div className="w-full max-w-2xl bg-white rounded-lg shadow-lg overflow-hidden">
+                <div className="px-6 py-4 border-b flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Terms of Service</h3>
+                  <button onClick={() => setShowTerms(false)} className="text-gray-500 hover:text-gray-700">✕</button>
+                </div>
+                <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto text-sm text-gray-700">
+                  <p>Welcome to our Task Manager application. By creating an account, you agree to use the service responsibly and comply with applicable laws.</p>
+                  <p>• You are responsible for the security of your account and credentials.
+                  <br/>• Do not abuse, disrupt, or reverse engineer the service.
+                  <br/>• We may update these terms; continued use means acceptance.</p>
+                  <p>These Terms are provided as a general template. Replace with your organization’s official Terms when available.</p>
+                </div>
+                <div className="px-6 py-4 border-t flex items-center justify-end gap-2">
+                  <button onClick={() => setShowTerms(false)} className="px-4 py-2 rounded border">Close</button>
+                  <button
+                    onClick={() => { setAcceptedTerms(true); setShowTerms(false); if (errors.terms) setErrors((prev) => ({ ...prev, terms: "" })) }}
+                    className="px-4 py-2 rounded bg-primary-600 text-white hover:bg-primary-700"
+                  >I Agree</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Privacy Policy Modal */}
+          {showPrivacy && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+              <div className="w-full max-w-2xl bg-white rounded-lg shadow-lg overflow-hidden">
+                <div className="px-6 py-4 border-b flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Privacy Policy</h3>
+                  <button onClick={() => setShowPrivacy(false)} className="text-gray-500 hover:text-gray-700">✕</button>
+                </div>
+                <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto text-sm text-gray-700">
+                  <p>We collect only the information necessary to provide the service (e.g., name, email). Your data is stored securely and used to deliver core functionality.</p>
+                  <p>• We do not sell your personal data.
+                  <br/>• You can request deletion of your account and data.
+                  <br/>• We use industry-standard security practices.</p>
+                  <p>This Privacy Policy is a placeholder. Replace it with your organization’s official policy when available.</p>
+                </div>
+                <div className="px-6 py-4 border-t flex items-center justify-end gap-2">
+                  <button onClick={() => setShowPrivacy(false)} className="px-4 py-2 rounded border">Close</button>
+                  <button
+                    onClick={() => { setAcceptedTerms(true); setShowPrivacy(false); if (errors.terms) setErrors((prev) => ({ ...prev, terms: "" })) }}
+                    className="px-4 py-2 rounded bg-primary-600 text-white hover:bg-primary-700"
+                  >I Agree</button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
