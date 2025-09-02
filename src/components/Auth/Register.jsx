@@ -195,11 +195,29 @@ const Register = () => {
                   <button onClick={() => setShowTerms(false)} className="text-gray-500 hover:text-gray-700">✕</button>
                 </div>
                 <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto text-sm text-gray-700">
-                  <p>Welcome to our Task Manager application. By creating an account, you agree to use the service responsibly and comply with applicable laws.</p>
-                  <p>• You are responsible for the security of your account and credentials.
-                  <br/>• Do not abuse, disrupt, or reverse engineer the service.
-                  <br/>• We may update these terms; continued use means acceptance.</p>
-                  <p>These Terms are provided as a general template. Replace with your organization’s official Terms when available.</p>
+                  <p>Welcome to Daily Task Manager. By creating an account or using our services, you agree to the following Terms of Service:</p>
+
+                  <p><strong>1. Eligibility</strong><br/>
+                  You must be at least 13 years old to use this service. If you are under 18, you may use the service only with parental or guardian consent.</p>
+
+                  <p><strong>2. Account Responsibility</strong><br/>
+                  You are responsible for maintaining the confidentiality of your login credentials. You agree to notify us immediately if you suspect unauthorized access to your account.</p>
+
+                  <p><strong>3. Acceptable Use</strong><br/>
+                  You agree not to misuse the platform, attempt to disrupt service, or engage in unlawful activity. Reverse engineering, automated scraping, or spamming is strictly prohibited.</p>
+
+                  <p><strong>4. Service Availability</strong><br/>
+                  We strive to keep the service reliable but cannot guarantee uninterrupted access. We may modify, suspend, or discontinue parts of the service at any time.</p>
+
+                  <p><strong>5. Termination</strong><br/>
+                  We reserve the right to suspend or terminate your account if you violate these Terms.</p>
+
+                  <p><strong>6. Changes</strong><br/>
+                  We may update these Terms occasionally. Continued use after changes means you accept the updated Terms.</p>
+
+                  <p><strong>7. Limitation of Liability</strong><br/>
+                  Daily Task Manager is provided “as is.” We are not liable for any data loss, service interruptions, or damages resulting from use of the service.</p>
+
                 </div>
                 <div className="px-6 py-4 border-t flex items-center justify-end gap-2">
                   <button onClick={() => setShowTerms(false)} className="px-4 py-2 rounded border">Close</button>
@@ -221,11 +239,43 @@ const Register = () => {
                   <button onClick={() => setShowPrivacy(false)} className="text-gray-500 hover:text-gray-700">✕</button>
                 </div>
                 <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto text-sm text-gray-700">
-                  <p>We collect only the information necessary to provide the service (e.g., name, email). Your data is stored securely and used to deliver core functionality.</p>
-                  <p>• We do not sell your personal data.
-                  <br/>• You can request deletion of your account and data.
-                  <br/>• We use industry-standard security practices.</p>
-                  <p>This Privacy Policy is a placeholder. Replace it with your organization’s official policy when available.</p>
+                  <p>At Daily Task Manager, we respect your privacy and are committed to protecting your personal data. This policy explains how we handle your information:</p>
+
+                  <p><strong>1. Information We Collect</strong><br/>
+                  • Account details: name, email, and password (encrypted).<br/>
+                  • Usage data: task entries, preferences, and app activity.<br/>
+                  • Technical data: browser type, device info, and cookies.</p>
+
+                  <p><strong>2. How We Use Your Data</strong><br/>
+                  • To provide core features like task creation, reminders, and storage.<br/>
+                  • To improve app performance and user experience.<br/>
+                  • To send important service updates (not marketing without consent).</p>
+
+                  <p><strong>3. Data Sharing</strong><br/>
+                  We do not sell or rent your data. We may share data only:<br/>
+                  • With trusted third-party services necessary to run the app (e.g., hosting).<br/>
+                  • If required by law or to protect safety and security.</p>
+
+                  <p><strong>4. Data Security</strong><br/>
+                  We use industry-standard measures to safeguard your data. However, no system is 100% secure, and you use the service at your own risk.</p>
+
+                  <p><strong>5. Your Rights</strong><br/>
+                  • You can update or delete your account anytime.<br/>
+                  • You may request a copy of your stored data.<br/>
+                  • You can contact us to request permanent deletion of your information.</p>
+
+                  <p><strong>6. Changes</strong><br/>
+                  We may update this Privacy Policy to reflect changes in the app or legal requirements. Updates will be posted here with a revised date.</p>
+
+                  <p><strong>7. Contact</strong><br/>
+                  If you have questions about this policy, please contact us at: <a
+                    href="mailto:contactdailytaskservice@gmail.com"
+                    style={{ color: "green", fontWeight: "bold", textDecoration: "underline" }}
+                  >
+                    contactdailytaskservice@gmail.com
+                  </a>
+                  </p>
+
                 </div>
                 <div className="px-6 py-4 border-t flex items-center justify-end gap-2">
                   <button onClick={() => setShowPrivacy(false)} className="px-4 py-2 rounded border">Close</button>
